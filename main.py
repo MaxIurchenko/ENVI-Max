@@ -6,7 +6,7 @@ from PIL.ImageOps import scale
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.widgets import RectangleSelector
 from PIL import Image, ImageTk
-from tkinter import filedialog, ttk, Checkbutton, simpledialog
+from tkinter import filedialog, ttk, Checkbutton, simpledialog, messagebox
 from skimage.transform import resize
 
 root = tk.Tk()
@@ -603,6 +603,133 @@ def rotate_image_90():
     display_image()
     display_hdr_info(image_info)
 
+# def remove_bands():
+#     """ Open a window to input new width and height for resizing the spectral image. """
+#     resize_window = tk.Toplevel(root)
+#     resize_window.title("Resize Spectral Image")
+#
+#     # Get current window position and size
+#     root_x = root.winfo_x()
+#     root_y = root.winfo_y()
+#     root_width = root.winfo_width()
+#     root_height = root.winfo_height()
+#
+#     # Center the window relative to root
+#     window_width = 350
+#     window_height = 120
+#     x_offset = root_x + (root_width - window_width) // 2
+#     y_offset = root_y + (root_height - window_height) // 2
+#     resize_window.geometry(f"{window_width}x{window_height}+{x_offset}+{y_offset}")
+#
+#     tk.Label(resize_window, text="Width:").grid(row=0, column=0, padx=10, pady=5)
+#     tk.Label(resize_window, text="Height:").grid(row=1, column=0, padx=10, pady=5)
+#
+#     width_entry = tk.Entry(resize_window)
+#     height_entry = tk.Entry(resize_window)
+#     width_entry.grid(row=0, column=1, padx=10, pady=5)
+#     height_entry.grid(row=1, column=1, padx=10, pady=5)
+#
+#     def apply_resize():
+#         """ Apply resizing based on user input. """
+#         try:
+#             new_width = int(width_entry.get())
+#             print(new_width)
+#             new_height = int(height_entry.get())
+#             print(new_height)
+#
+#             if new_width > 0 and new_height > 0:
+#                 global spec_img
+#                 spec_img = resize_spectral_image(spec_img, (new_width, new_height))
+#                 image_info["lines"] = new_width
+#                 image_info["samples"] = new_height
+#                 display_image()  # Refresh the displayed image
+#                 display_hdr_info(image_info)
+#                 resize_window.destroy()
+#             else:
+#                 tk.messagebox.showerror("Invalid Input", "Width and Height must be positive integers.")
+#         except ValueError:
+#             tk.messagebox.showerror("Invalid Input", "Please enter valid numbers for width and height.")
+#
+#     tk.Button(resize_window, text="Apply", command=apply_resize, width=10).grid(row=2, column=0, pady=10)
+#     tk.Button(resize_window, text="Cancel", command=resize_window.destroy, width=10).grid(row=2, column=1, pady=10)
+#
+def parse_band_selection(bands_str):
+    """
+    Parse user input string into a list of band indices.
+    Supports individual numbers and ranges (e.g., "1,3,5-8").
+
+    :param bands_str: String input from the user (e.g., "1,3,5-8")
+    :return: List of integers representing selected band indices
+    """
+    selected_bands = []
+    try:
+        items = bands_str.split(',')
+        for item in items:
+            if '-' in item:
+                start, end = map(int, item.split('-'))
+                selected_bands.extend(range(start, end + 1))  # Include end value
+            else:
+                selected_bands.append(int(item))
+        return list(set(selected_bands))  # Remove duplicates
+    except ValueError:
+        return None
+
+
+def remove_selected_bands(image, bands_to_remove):
+    """
+    Remove selected spectral bands from the image.
+
+    :param image: NumPy array of shape (height, width, bands)
+    :param bands_to_remove: List of band indices to remove
+    :return: Image with selected bands removed
+    """
+    if image is None:
+        messagebox.showerror("Error", "No spectral image loaded!")
+        return None
+
+    if not bands_to_remove or len(bands_to_remove) == 0:
+        messagebox.showerror("Error", "No bands selected for removal!")
+        return image
+
+    bands_to_remove = np.array(bands_to_remove)
+
+    # Check if indices are within the valid range
+    if np.any(bands_to_remove >= image.shape[2]) or np.any(bands_to_remove < 0):
+        messagebox.showerror("Error", "Invalid band indices!")
+        return image
+
+    # Delete the selected bands along the third axis (bands)
+    new_image = np.delete(image, bands_to_remove, axis=2)
+    image_info["wavelengths"] = np.delete(image_info["wavelengths"], bands_to_remove)
+    return new_image
+
+
+def remove_bands():
+    """ Prompt the user to enter bands or range to remove, then remove them from the spectral image. """
+    global spec_img
+
+    if spec_img is None:
+        messagebox.showerror("Error", "No spectral image loaded!")
+        return
+
+    # Ask user to input bands or range
+    bands_str = simpledialog.askstring("Remove Bands", "Enter band indices or range (e.g., 3,5,7-10,15):")
+
+    if bands_str:
+        bands_to_remove = parse_band_selection(bands_str)
+
+        if bands_to_remove is None:
+            messagebox.showerror("Error", "Invalid input! Use numbers or ranges like '2,4-7'.")
+            return
+
+        # Remove selected bands
+        spec_img = remove_selected_bands(spec_img, bands_to_remove)
+
+        # Update the display
+        display_image()
+        display_hdr_info(image_info)
+
+        messagebox.showinfo("Success", f"Removed bands: {bands_to_remove}")
 
 
 def app():
@@ -621,6 +748,7 @@ def app():
     my_menu.add_cascade(label="Edit", menu=edit_menu)
     edit_menu.add_command(label='Resize', command=open_resize_window)
     edit_menu.add_command(label='Rotate', command=rotate_image_90)
+    edit_menu.add_command(label='Remove bands', command=remove_bands)
 
     #Veiw
     my_menu.add_cascade(label="View", menu=view_menu)
