@@ -2,12 +2,10 @@ import tkinter as tk
 import numpy as np
 import spectral
 import matplotlib.pyplot as plt
-from PIL.ImageOps import scale
+# import cv2
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.widgets import RectangleSelector
-from PIL import Image, ImageTk
 from tkinter import filedialog, ttk, Checkbutton, simpledialog, messagebox
-from skimage.transform import resize
 
 root = tk.Tk()
 root.title('ENVI Max')
@@ -503,74 +501,6 @@ def bright_rgb_correction(val_preview, val):
 
         print("corrected")
 
-def resize_spectral_image(image, new_size):
-    """
-    Resize the spectral image to a new width and height while maintaining its spectral bands.
-
-    :param image: NumPy array of shape (height, width, bands)
-    :param new_size: Tuple (new_width, new_height)
-    :return: Resized NumPy array with the same number of bands
-    """
-    if image is None:
-        tk.messagebox.showerror("Error", "No spectral image loaded!")
-        return None
-
-    new_width, new_height = new_size
-    bands = image.shape[2] if len(image.shape) == 3 else 1  # Ensure we keep band dimension
-
-    resized_image = resize(image, (new_height, new_width, bands), preserve_range=True, anti_aliasing=True)
-    return resized_image.astype(image.dtype)  # Preserve the original data type
-
-def open_resize_window():
-    """ Open a window to input new width and height for resizing the spectral image. """
-    resize_window = tk.Toplevel(root)
-    resize_window.title("Resize Spectral Image")
-
-    # Get current window position and size
-    root_x = root.winfo_x()
-    root_y = root.winfo_y()
-    root_width = root.winfo_width()
-    root_height = root.winfo_height()
-
-    # Center the window relative to root
-    window_width = 350
-    window_height = 120
-    x_offset = root_x + (root_width - window_width) // 2
-    y_offset = root_y + (root_height - window_height) // 2
-    resize_window.geometry(f"{window_width}x{window_height}+{x_offset}+{y_offset}")
-
-    tk.Label(resize_window, text="Width:").grid(row=0, column=0, padx=10, pady=5)
-    tk.Label(resize_window, text="Height:").grid(row=1, column=0, padx=10, pady=5)
-
-    width_entry = tk.Entry(resize_window)
-    height_entry = tk.Entry(resize_window)
-    width_entry.grid(row=0, column=1, padx=10, pady=5)
-    height_entry.grid(row=1, column=1, padx=10, pady=5)
-
-    def apply_resize():
-        """ Apply resizing based on user input. """
-        try:
-            new_width = int(width_entry.get())
-            print(new_width)
-            new_height = int(height_entry.get())
-            print(new_height)
-
-            if new_width > 0 and new_height > 0:
-                global spec_img
-                spec_img = resize_spectral_image(spec_img, (new_width, new_height))
-                image_info["lines"] = new_width
-                image_info["samples"] = new_height
-                display_image()  # Refresh the displayed image
-                display_hdr_info(image_info)
-                resize_window.destroy()
-            else:
-                tk.messagebox.showerror("Invalid Input", "Width and Height must be positive integers.")
-        except ValueError:
-            tk.messagebox.showerror("Invalid Input", "Please enter valid numbers for width and height.")
-
-    tk.Button(resize_window, text="Apply", command=apply_resize, width=10).grid(row=2, column=0, pady=10)
-    tk.Button(resize_window, text="Cancel", command=resize_window.destroy, width=10).grid(row=2, column=1, pady=10)
-
 def rotate_spectral_image(image, angle=90):
     """
     Rotate the spectral image by 90 degrees clockwise.
@@ -693,7 +623,6 @@ def app():
 
     #Edit submenu
     my_menu.add_cascade(label="Edit", menu=edit_menu)
-    edit_menu.add_command(label='Resize', command=open_resize_window)
     edit_menu.add_command(label='Rotate', command=rotate_image_90)
     edit_menu.add_command(label='Remove bands', command=remove_bands)
 
