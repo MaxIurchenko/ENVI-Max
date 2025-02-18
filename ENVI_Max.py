@@ -2,7 +2,6 @@ import tkinter as tk
 import numpy as np
 import spectral
 import matplotlib.pyplot as plt
-# import cv2
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.widgets import RectangleSelector
 from tkinter import filedialog, ttk, Checkbutton, simpledialog, messagebox
@@ -533,41 +532,39 @@ def rotate_image_90():
     display_image()
     display_hdr_info(image_info)
 
-def parse_band_selection(bands_str):
-    """
-    Parse user input string into a list of band indices.
-    Supports individual numbers and ranges (e.g., "1,3,5-8").
-
-    :param bands_str: String input from the user (e.g., "1,3,5-8")
-    :return: List of integers representing selected band indices
-    """
-    selected_bands = []
+def parse_band_selection(bands_str, total_bands):
+    selected_bands = set()  # Using a set to prevent duplicates
     try:
         items = bands_str.split(',')
         for item in items:
-            if '-' in item:
+            item = item.strip()
+
+            if '-' in item:  # Handle range (e.g., "5-10")
                 start, end = map(int, item.split('-'))
-                selected_bands.extend(range(start, end + 1))  # Include end value
-            else:
-                selected_bands.append(int(item))
-        return list(set(selected_bands))  # Remove duplicates
+                selected_bands.update(range(start, end + 1))
+
+            elif '/' in item:  # Handle step-based removal (e.g., "/5")
+                step = int(item[1:])  # Get step value (e.g., "5" from "/5")
+                selected_bands.update(range(0, total_bands, step))
+
+            else:  # Handle single band (e.g., "3")
+                selected_bands.add(int(item))
+
+        # Ensure all indices are within valid range
+        selected_bands = {b for b in selected_bands if 0 <= b < total_bands}
+
+        return sorted(selected_bands)  # Return sorted list for consistency
+
     except ValueError:
         return None
 
 def remove_selected_bands(image, bands_to_remove):
-    """
-    Remove selected spectral bands from the image.
-
-    :param image: NumPy array of shape (height, width, bands)
-    :param bands_to_remove: List of band indices to remove
-    :return: Image with selected bands removed
-    """
     if image is None:
         messagebox.showerror("Error", "No spectral image loaded!")
         return None
 
-    if not bands_to_remove or len(bands_to_remove) == 0:
-        messagebox.showerror("Error", "No bands selected for removal!")
+    if not bands_to_remove:
+        messagebox.showerror("Error", "No valid bands selected for removal!")
         return image
 
     bands_to_remove = np.array(bands_to_remove)
@@ -580,6 +577,8 @@ def remove_selected_bands(image, bands_to_remove):
     # Delete the selected bands along the third axis (bands)
     new_image = np.delete(image, bands_to_remove, axis=2)
     image_info["wavelengths"] = np.delete(image_info["wavelengths"], bands_to_remove)
+    image_info["bands"] = len(image_info["wavelengths"])
+    image_info['default bands'] = None
     return new_image
 
 def remove_bands():
@@ -590,14 +589,16 @@ def remove_bands():
         messagebox.showerror("Error", "No spectral image loaded!")
         return
 
+    total_bands = spec_img.shape[2]  # Get total bands count
+
     # Ask user to input bands or range
-    bands_str = simpledialog.askstring("Remove Bands", "Enter band indices or range (e.g., 3,5,7-10,15):")
+    bands_str = simpledialog.askstring("Remove Bands", "Enter band indices or range (e.g., 3,5,7-10,/5):")
 
     if bands_str:
-        bands_to_remove = parse_band_selection(bands_str)
+        bands_to_remove = parse_band_selection(bands_str, total_bands)
 
-        if bands_to_remove is None:
-            messagebox.showerror("Error", "Invalid input! Use numbers or ranges like '2,4-7'.")
+        if bands_to_remove is None or len(bands_to_remove) == 0:
+            messagebox.showerror("Error", "Invalid input! Use numbers, ranges (e.g., '2,4-7'), or steps (e.g., '/5').")
             return
 
         # Remove selected bands
@@ -608,6 +609,7 @@ def remove_bands():
         display_hdr_info(image_info)
 
         messagebox.showinfo("Success", f"Removed bands: {bands_to_remove}")
+
 
 def app():
     global rectangle_selector
