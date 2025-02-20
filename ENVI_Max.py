@@ -352,18 +352,15 @@ def save_image_as_raw():
         messagebox.showerror("Error", "No image to save!")
         return
 
-    # Normalize and convert to uint16 safely
-    if spec_img.dtype != np.uint16:
-        cropped_array = (spec_img * 65535).clip(0, 65535).astype(np.uint16)
-    else:
-        cropped_array = spec_img
+
+    cropped_array = spec_img
 
     # Ask for save location
     save_path = filedialog.asksaveasfilename(defaultextension=".raw",
                                              filetypes=[("RAW files", "*.raw"), ("All files", "*.*")])
     if save_path:
         # Save the RAW file
-        cropped_array.tofile(save_path)
+        cropped_array.astype(np.float32).tofile(save_path)
 
         # Save HDR file
         hdr_path = save_path.replace(".raw", ".hdr")
@@ -408,7 +405,7 @@ def generate_hdr_metadata(array):
     """Generate HDR metadata for the cropped image."""
     height, width = array.shape[:2]
     bands = 1 if len(array.shape) == 2 else array.shape[2]
-    data_type = 12
+    data_type = 4
 
     # Join wavelengths into a comma-separated string
     wavelengths = ",\n".join(str(wave) for wave in image_info['wavelengths'])
