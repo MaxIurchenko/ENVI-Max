@@ -348,32 +348,32 @@ def clear_spectral_plot():
     
 def save_image_as_raw():
     """Save the cropped image as RAW and HDR."""
-    if spec_img is not None:
-        # Get the extents from the rectangle
-        x_min, x_max, y_min, y_max = rectangle_selector.extents
+    if spec_img is None:
+        messagebox.showerror("Error", "No image to save!")
+        return
 
-        # Convert extents to a NumPy array
-        cropped_array = spec_img[:,:,:]
+    # Normalize and convert to uint16 safely
+    if spec_img.dtype != np.uint16:
+        cropped_array = (spec_img * 65535).clip(0, 65535).astype(np.uint16)
+    else:
+        cropped_array = spec_img
 
-        # Ask the user for a filename to save as RAW
-        save_path = filedialog.asksaveasfilename(defaultextension=".raw",
-                                                 filetypes=[("RAW files", "*.raw"), ("All files", "*.*")])
-        if save_path:
-            # Save the RAW file
-            cropped_array.astype(np.float32).tofile(save_path)  # Save as binary raw data
+    # Ask for save location
+    save_path = filedialog.asksaveasfilename(defaultextension=".raw",
+                                             filetypes=[("RAW files", "*.raw"), ("All files", "*.*")])
+    if save_path:
+        # Save the RAW file
+        cropped_array.tofile(save_path)
 
-            # Create the HDR file path
-            hdr_path = save_path.replace(".raw", ".hdr")
+        # Save HDR file
+        hdr_path = save_path.replace(".raw", ".hdr")
+        hdr_content = generate_hdr_metadata(cropped_array)
 
-            # Generate the HDR metadata
-            hdr_content = generate_hdr_metadata(cropped_array)
+        with open(hdr_path, "w") as hdr_file:
+            hdr_file.write(hdr_content)
 
-            # Write the HDR metadata to a file
-            with open(hdr_path, "w") as hdr_file:
-                hdr_file.write(hdr_content)
-
-            tk.messagebox.showinfo("Image Saved",
-                                f"RAW image and HDR file have been saved.\nRAW file: {save_path}\nHDR file: {hdr_path}")
+        messagebox.showinfo("Image Saved",
+                            f"RAW image and HDR file have been saved.\nRAW file: {save_path}\nHDR file: {hdr_path}")
 
 def save_cropped_image_as_raw():
     """Save the cropped image as RAW and HDR."""
@@ -408,7 +408,7 @@ def generate_hdr_metadata(array):
     """Generate HDR metadata for the cropped image."""
     height, width = array.shape[:2]
     bands = 1 if len(array.shape) == 2 else array.shape[2]
-    data_type = 4
+    data_type = 12
 
     # Join wavelengths into a comma-separated string
     wavelengths = ",\n".join(str(wave) for wave in image_info['wavelengths'])
@@ -471,7 +471,6 @@ def dark_white_correction():
 
     # Replace spec_img with corrected spectral cube
     spec_img = spectral_cube
-
     # Update UI
     display_image()
     dw_correction.config(text='Corrected', fg="green")
@@ -609,7 +608,6 @@ def remove_bands():
         display_hdr_info(image_info)
 
         messagebox.showinfo("Success", f"Removed bands: {bands_to_remove}")
-
 
 def app():
     global rectangle_selector
