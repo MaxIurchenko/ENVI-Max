@@ -24,7 +24,7 @@ file_menu = tk.Menu(my_menu)
 edit_menu = tk.Menu(my_menu)
 view_menu = tk.Menu(my_menu)
 
-#Right menu label
+# Right menu label
 right_menu_label = tk.Label(frame)
 hdr_text_box = tk.Text(right_menu_label)
 hdr_Info_Label_scrollbar = ttk.Scrollbar(right_menu_label)
@@ -42,7 +42,7 @@ plt_toolbar.grid(row=2, column=0)
 image_label.draw()
 image_label.get_tk_widget().grid(row=1, column=0, sticky="nswe")
 
-#Spectral Window
+# Spectral Window
 spectral_window = tk.Toplevel(root)
 spectral_window.title("Spectral Plot")
 
@@ -62,11 +62,10 @@ spectral_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 rectangle_size_y = tk.Entry(right_menu_label)
 rectangle_size_x = tk.Entry(right_menu_label)
 
-#Load info dark and wight
+# Load info dark and wight
 dark_text = tk.Label(right_menu_label, text="No raw file", bg='lightgray')
 white_text = tk.Label(right_menu_label, text="No raw file", bg='lightgray')
 dw_correction = tk.Label(right_menu_label, text="Not correction", bg='lightgray')
-
 
 # Main variables
 spec_img = None
@@ -80,6 +79,7 @@ rectangle_selector = None
 dark_raw = None
 white_raw = None
 
+
 def open_file():
     global spec_img
     global image_info
@@ -90,7 +90,7 @@ def open_file():
     global dw_correction
     """Handles file opening logic."""
     file_path = filedialog.askopenfilename(title='Open File',
-                                                filetypes=(("Spectra File", "*.hdr"), ("All files", "*.*")))
+                                           filetypes=(("Spectra File", "*.hdr"), ("All files", "*.*")))
 
     if file_path.endswith('.hdr'):
         # Load the image and metadata
@@ -122,9 +122,9 @@ def open_file():
         dark_raw = None
         white_raw = None
 
-
     # Clear the old plot
     spectral_ax.clear()
+
 
 def open_spectral_window():
     global spectral_window
@@ -149,6 +149,7 @@ def open_spectral_window():
 
         # Bind the window's focus event to ensure it stays below the main window
         spectral_window.bind("<FocusIn>", lambda e: root.lower(spectral_window))
+
 
 def display_hdr_info(hdr_info):
     wavelengths = "\n".join([f"{i + 1}: {w}" for i, w in enumerate(hdr_info['wavelengths'])])
@@ -178,7 +179,7 @@ def display_hdr_info(hdr_info):
             wavelengths = wavelengths[0].splitlines()
 
         hdr_info["wavelengths"] = [int(float(wave)) for wave in wavelengths]  # Convert to integers
-        target_value=430
+        target_value = 430
         closest_index = min(enumerate(hdr_info["wavelengths"]), key=lambda x: abs(x[1] - (target_value + 200)))[0]
         red_combo_box.current(closest_index)
         closest_index = min(enumerate(hdr_info["wavelengths"]), key=lambda x: abs(x[1] - (target_value + 100)))[0]
@@ -186,9 +187,10 @@ def display_hdr_info(hdr_info):
         closest_index = min(enumerate(hdr_info["wavelengths"]), key=lambda x: abs(x[1] - target_value))[0]
         blue_combo_box.current(closest_index)
 
+
 def display_image():
     global rgb_image
-    bands = [red_combo_box.current(),green_combo_box.current(), blue_combo_box.current()]
+    bands = [red_combo_box.current(), green_combo_box.current(), blue_combo_box.current()]
     rgb_image = np.zeros((image_info["lines"], image_info["samples"], 3), dtype=np.float32)
     for i, band_index in enumerate(bands):
         band_data = np.squeeze(spec_img[:, :, band_index])  # Extract and squeeze band data to ensure 2D shape
@@ -204,16 +206,19 @@ def display_image():
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     image_label.draw()
 
+
 def on_select(eclick, erelease):
     # These should be the coordinates of the drawn rectangle
     rect_position['x1'][0], rect_position['y1'][0] = eclick.xdata, eclick.ydata
     rect_position['x2'][0], rect_position['y2'][0] = erelease.xdata, erelease.ydata
 
-    x_size, y_size = int(rect_position['x2'][0] - rect_position['x1'][0]), int(rect_position['y2'][0] - rect_position['y1'][0])
+    x_size, y_size = int(rect_position['x2'][0] - rect_position['x1'][0]), int(
+        rect_position['y2'][0] - rect_position['y1'][0])
     rectangle_size_x.delete(0, tk.END)
     rectangle_size_y.delete(0, tk.END)
-    rectangle_size_x.insert(0,str(x_size))
-    rectangle_size_y.insert(0,str(y_size))
+    rectangle_size_x.insert(0, str(x_size))
+    rectangle_size_y.insert(0, str(y_size))
+
 
 def set_rectangle_size():
     if rect_position['x1'][0] != 0 or rect_position['y1'][0] != 0:
@@ -226,12 +231,14 @@ def set_rectangle_size():
                                       rect_position['y1'][0],
                                       rect_position['y2'][0])
 
+
 def on_click(event):
     if event.inaxes:  # Ensure the click is within an axis
         x, y = int(event.xdata), int(event.ydata)
 
     if checker_single_block.get() == 1 and spectral_window.winfo_exists():
         plot_single_spectral(x, y)
+
 
 def plot_single_spectral(x, y):
     global spectral_data
@@ -282,6 +289,7 @@ def plot_single_spectral(x, y):
     spectral_canvas.draw()
     root.lower(spectral_window)
 
+
 def plot_rectangle_spectral():
     global spectral_data
     checker_single_block.set(0)
@@ -292,10 +300,10 @@ def plot_rectangle_spectral():
 
     # Extract data from the specified rectangle
     spectral_data = spec_img[
-        rect_position['y1'][0]:rect_position['y2'][0],
-        rect_position['x1'][0]:rect_position['x2'][0],
-        :
-    ]
+                    rect_position['y1'][0]:rect_position['y2'][0],
+                    rect_position['x1'][0]:rect_position['x2'][0],
+                    :
+                    ]
 
     wavelengths = list(map(float, image_info['wavelengths']))
 
@@ -339,19 +347,20 @@ def plot_rectangle_spectral():
     spectral_data = None
     root.lower(spectral_window)
 
+
 def clear_spectral_plot():
     global spectral_data
     # Clear the old plot
     spectral_ax.clear()
     spectral_canvas.draw()
     spectral_data = None
-    
+
+
 def save_image_as_raw():
     """Save the cropped image as RAW and HDR."""
     if spec_img is None:
         messagebox.showerror("Error", "No image to save!")
         return
-
 
     cropped_array = spec_img
 
@@ -372,9 +381,10 @@ def save_image_as_raw():
         messagebox.showinfo("Image Saved",
                             f"RAW image and HDR file have been saved.\nRAW file: {save_path}\nHDR file: {hdr_path}")
 
+
 def save_cropped_image_as_raw():
     """Save the cropped image as RAW and HDR."""
-    if rect_position['x2'][0]>rect_position['x1'][0] or rect_position['y2']>rect_position['y1']:
+    if rect_position['x2'][0] > rect_position['x1'][0] or rect_position['y2'] > rect_position['y1']:
         # Get the extents from the rectangle
         x_min, x_max, y_min, y_max = rectangle_selector.extents
 
@@ -399,7 +409,8 @@ def save_cropped_image_as_raw():
                 hdr_file.write(hdr_content)
 
             tk.messagebox.showinfo("Image Saved",
-                                f"RAW image and HDR file have been saved.\nRAW file: {save_path}\nHDR file: {hdr_path}")
+                                   f"RAW image and HDR file have been saved.\nRAW file: {save_path}\nHDR file: {hdr_path}")
+
 
 def generate_hdr_metadata(array):
     """Generate HDR metadata for the cropped image."""
@@ -427,6 +438,7 @@ def generate_hdr_metadata(array):
     )
     return hdr_content
 
+
 def open_dark_raw():
     global dark_raw
 
@@ -438,6 +450,7 @@ def open_dark_raw():
         dark_text.config(text=f"Uploaded: {dark_raw.shape}", fg='green')
         print(dark_raw.shape)
 
+
 def open_white_raw():
     global white_raw
 
@@ -447,6 +460,7 @@ def open_white_raw():
         # Load the image and metadata
         white_raw = spectral.open_image(file_path).load()  # Convert to NumPy array
         white_text.config(text=f"Uploaded: {white_raw.shape}", fg='green')
+
 
 def dark_white_correction():
     global white_raw, dark_raw, spec_img, dw_correction
@@ -472,6 +486,7 @@ def dark_white_correction():
     display_image()
     dw_correction.config(text='Corrected', fg="green")
 
+
 def bright_rgb_correction(val_preview, val):
     global rgb_image
     factor_bright = float(val) / 100  # Normalize the factor between 0 and 2
@@ -496,6 +511,7 @@ def bright_rgb_correction(val_preview, val):
 
         print("corrected")
 
+
 def rotate_spectral_image(image, angle=90):
     """
     Rotate the spectral image by 90 degrees clockwise.
@@ -516,17 +532,19 @@ def rotate_spectral_image(image, angle=90):
     rotated_image = np.rot90(image, k=angle // 90, axes=(0, 1))
     return rotated_image
 
+
 def rotate_image_90():
     """ Rotate the spectral image by 90 degrees and update the display. """
     global spec_img
     spec_img = rotate_spectral_image(spec_img, 90)
-      # Refresh displayed image
-    new_width =  image_info["samples"]
+    # Refresh displayed image
+    new_width = image_info["samples"]
     new_height = image_info["lines"]
     image_info["lines"] = new_width
     image_info["samples"] = new_height
     display_image()
     display_hdr_info(image_info)
+
 
 def parse_band_selection(bands_str, total_bands):
     selected_bands = set()  # Using a set to prevent duplicates
@@ -554,6 +572,7 @@ def parse_band_selection(bands_str, total_bands):
     except ValueError:
         return None
 
+
 def remove_selected_bands(image, bands_to_remove):
     if image is None:
         messagebox.showerror("Error", "No spectral image loaded!")
@@ -580,6 +599,7 @@ def remove_selected_bands(image, bands_to_remove):
 
     return new_image
 
+
 def remove_bands():
     """ Prompt the user to enter bands or range to remove, then remove them from the spectral image. """
     global spec_img
@@ -604,10 +624,12 @@ def remove_bands():
         spec_img = remove_selected_bands(spec_img, bands_to_remove)
 
         # Update the display
+
         display_hdr_info(image_info)
         display_image()
 
         messagebox.showinfo("Success", f"Removed bands: {bands_to_remove}")
+
 
 def app():
     global rectangle_selector
@@ -621,20 +643,19 @@ def app():
     file_menu.add_separator()
     file_menu.add_command(label="Exit", command=root.quit)
 
-    #Edit submenu
+    # Edit submenu
     my_menu.add_cascade(label="Edit", menu=edit_menu)
     edit_menu.add_command(label='Rotate', command=rotate_image_90)
     edit_menu.add_command(label='Remove bands', command=remove_bands)
 
-    #Veiw
+    # Veiw
     my_menu.add_cascade(label="View", menu=view_menu)
     view_menu.add_command(label='Spectral window', command=open_spectral_window)
-#------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------
 
     # Right menu label
     right_menu_label.config(justify="left", background="lightgray")
     right_menu_label.grid(row=0, column=2, rowspan=3, sticky='ns')
-
 
     # HDR info text
     hdr_text_box.config(wrap=tk.WORD, width=30, height=25, bg='lightgray', state=tk.DISABLED)
@@ -648,7 +669,7 @@ def app():
     green_combo_box.grid(row=2, column=1, sticky='nw')
     blue_combo_box.grid(row=3, column=1, sticky='nw')
 
-    #Update bands button
+    # Update bands button
     update_bands_button = tk.Button(right_menu_label, text='Update\nbands', command=display_image, width=7, height=4)
     update_bands_button.grid(row=1, rowspan=3, column=0, sticky='nw')
 
@@ -656,7 +677,7 @@ def app():
     rectangle_selector = RectangleSelector(
         ax,
         on_select,
-        useblit=False,              # Set to False to keep the rectangle visible
+        useblit=False,  # Set to False to keep the rectangle visible
         button=[1],  # Only respond to left mouse button
         minspanx=5, minspany=5,  # Minimum size for selection
         interactive=True  # Allows resizing and moving the selection
@@ -665,39 +686,50 @@ def app():
     # rectangle selector size enter
     rectangle_size_y.config(width=6)
     rectangle_size_x.config(width=6)
-    rectangle_size_x.insert(0,'0')
-    rectangle_size_y.insert(0,'0')
-    tk.Label(right_menu_label, text="X", bg='lightgray').grid(row=4, column=0, columnspan=1, pady=3, padx=10, sticky='e')
+    rectangle_size_x.insert(0, '0')
+    rectangle_size_y.insert(0, '0')
+    tk.Label(right_menu_label, text="X", bg='lightgray').grid(row=4, column=0, columnspan=1, pady=3, padx=10,
+                                                              sticky='e')
 
     rectangle_size_x.grid(row=4, column=0, columnspan=2, sticky='nw', pady=2)
-    rectangle_size_y.grid(row=4, column=1, columnspan=2, sticky='w',pady=2)
-    update_bands_button = tk.Button(right_menu_label, text='Set',command=set_rectangle_size,bg='lightgray')
+    rectangle_size_y.grid(row=4, column=1, columnspan=2, sticky='w', pady=2)
+    update_bands_button = tk.Button(right_menu_label, text='Set', command=set_rectangle_size, bg='lightgray')
     update_bands_button.grid(row=4, column=1, sticky='e', padx=40, pady=0)
-#---------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------
     # Chooose single spectral
     fig.canvas.mpl_connect("button_press_event", on_click)
 
     # Checkboxes of build spectral
-    Checkbutton(right_menu_label, text='Build single spectral', variable=checker_single_block, bg='lightgray').grid(row=5,column=0, columnspan=2, sticky='nw')
-    Checkbutton(right_menu_label, text='Add new spector', variable=checker_add_new_spec, bg='lightgray').grid(row=6, column=0, columnspan=2,sticky='nw')
+    Checkbutton(right_menu_label, text='Build single spectral', variable=checker_single_block, bg='lightgray').grid(
+        row=5, column=0, columnspan=2, sticky='nw')
+    Checkbutton(right_menu_label, text='Add new spector', variable=checker_add_new_spec, bg='lightgray').grid(row=6,
+                                                                                                              column=0,
+                                                                                                              columnspan=2,
+                                                                                                              sticky='nw')
 
-    #Button Clear spectral
-    update_bands_button = tk.Button(right_menu_label, text='Clear spectral', command=clear_spectral_plot, bg='lightgray',width=12, height=1)
+    # Button Clear spectral
+    update_bands_button = tk.Button(right_menu_label, text='Clear spectral', command=clear_spectral_plot,
+                                    bg='lightgray', width=12, height=1)
     update_bands_button.grid(row=7, column=0, columnspan=2, sticky='nw')
 
     # Button plot rectangle
-    update_bands_button = tk.Button(right_menu_label, text='Plot rectangle', command=plot_rectangle_spectral,bg='lightgray',width=12, height=1)
+    update_bands_button = tk.Button(right_menu_label, text='Plot rectangle', command=plot_rectangle_spectral,
+                                    bg='lightgray', width=12, height=1)
     update_bands_button.grid(row=8, column=0, columnspan=2, sticky='nw')
 
-    #Dark and wight correction
-    tk.Label(right_menu_label, text="Dark and Wight correction", bg='lightgray').grid(row=9, column=0, columnspan=2, pady=5,sticky='nw')
-    update_bands_button = tk.Button(right_menu_label, text='Dark', command=open_dark_raw,bg='lightgray', width=6, height=1)
+    # Dark and wight correction
+    tk.Label(right_menu_label, text="Dark and Wight correction", bg='lightgray').grid(row=9, column=0, columnspan=2,
+                                                                                      pady=5, sticky='nw')
+    update_bands_button = tk.Button(right_menu_label, text='Dark', command=open_dark_raw, bg='lightgray', width=6,
+                                    height=1)
     update_bands_button.grid(row=10, column=0, sticky='nw')
     dark_text.grid(row=10, column=1, columnspan=2, sticky='nw')
-    update_bands_button = tk.Button(right_menu_label, text='White', command=open_white_raw, bg='lightgray', width=6,height=1)
+    update_bands_button = tk.Button(right_menu_label, text='White', command=open_white_raw, bg='lightgray', width=6,
+                                    height=1)
     update_bands_button.grid(row=11, column=0, sticky='nw')
     white_text.grid(row=11, column=1, columnspan=2, sticky='nw')
-    update_bands_button = tk.Button(right_menu_label, text='Correction', command=dark_white_correction, bg='lightgray', width=6,height=1)
+    update_bands_button = tk.Button(right_menu_label, text='Correction', command=dark_white_correction, bg='lightgray',
+                                    width=6, height=1)
     update_bands_button.grid(row=12, column=0, sticky='nw')
     dw_correction.grid(row=12, column=1, columnspan=2, sticky='nw')
 
@@ -709,10 +741,11 @@ def app():
 
     # Update the image when the slider is moved
     brightness_slider.bind("<ButtonRelease-1>", lambda event: bright_rgb_correction(brightness_slider_preview_value,
-                                                                           brightness_slider.get()))
+                                                                                    brightness_slider.get()))
 
-    #loop
+    # loop
     root.mainloop()
+
 
 # Main application
 if __name__ == "__main__":
