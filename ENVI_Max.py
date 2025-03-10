@@ -590,10 +590,13 @@ def remove_selected_bands(image, bands_to_remove):
         return image
 
     # Delete the selected bands along the third axis (bands)
-    new_image = np.delete(image, bands_to_remove, axis=2)
+    new_image = np.delete(image, bands_to_remove, axis=2).astype(np.float32)
+
+    # Update metadata
     image_info["wavelengths"] = np.delete(image_info["wavelengths"], bands_to_remove)
     image_info["bands"] = len(image_info["wavelengths"])
     image_info['default bands'] = None
+
     return new_image
 
 
